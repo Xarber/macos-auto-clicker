@@ -51,7 +51,11 @@ struct MainView: View {
 
     func registerKeyboardShortcuts() {
         KeyboardShortcuts.onKeyUp(for: .pressStartButton) { [self] in
-            self.start()
+            if KeyboardShortcuts.Name.pressStopButton.shortcut == nil && self.hasStarted {
+                self.stop()
+            } else {
+                self.start()
+            }
         }
 
         KeyboardShortcuts.onKeyUp(for: .pressStopButton) { [self] in

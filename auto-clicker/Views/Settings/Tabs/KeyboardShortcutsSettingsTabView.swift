@@ -10,6 +10,7 @@ import KeyboardShortcuts
 import Defaults
 
 struct KeyboardShortcutsSettingsTabView: View {
+    @Default(.randomMouseMovement) private var randomMouseMovement
     @Default(.mouseStartOnMove) private var mouseStartOnMove
 
     var body: some View {
@@ -49,6 +50,20 @@ struct KeyboardShortcutsSettingsTabView: View {
                     " " + String(format: NSLocalizedString("settings_mouse_movement_stop_on_move", comment: "Stop auto clicker when mouse moves toggle")),
                     key: .mouseStopOnMove
                 )
+            }
+
+            SettingsTabItemView(title: "Random cursor movement", help: "Moves within a circle around the starting position while clicking. Changes take effect on the next start.") {
+                Defaults.Toggle(" Enable random movement", key: .randomMouseMovement)
+                HStack {
+                    Text("Radius (pixels)")
+                    NumberField(text: "", min: 1, max: 1000, number: Binding(
+                        get: { Defaults[.randomMouseRadius] }, set: { Defaults[.randomMouseRadius] = $0 }))
+                        .frame(width: 70)
+                    Text("Interval (seconds)")
+                    NumberField(text: "", min: 1, max: 3600, number: Binding(
+                        get: { Defaults[.randomMouseInterval] }, set: { Defaults[.randomMouseInterval] = $0 }))
+                        .frame(width: 70)
+                }.disabled(!randomMouseMovement)
             }
 
             SettingsTabItemView(

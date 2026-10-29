@@ -37,6 +37,11 @@ struct PermissionsView: View {
             .buttonStyle(ThemedButtonStyle(fontSize: 16, width: 220))
             .padding(.bottom, 25)
 
+            Text("If access was already enabled, remove the old AutoClicker entry in Privacy & Security → Accessibility, quit and reopen the app, then grant access again. A rebuilt app may need a new approval.")
+                .font(.system(size: 12))
+                .multilineTextAlignment(.center)
+                .padding(.bottom, 12)
+
             Text("permissions_help_unlock_note", comment: "Permissions helper splash window unlock note")
                 .font(.system(size: 12))
                 .multilineTextAlignment(.center)

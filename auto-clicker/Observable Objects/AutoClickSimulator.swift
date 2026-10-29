@@ -29,6 +29,9 @@ final class AutoClickSimulator: ObservableObject {
     private var input = Input()
 
     private var timer: Timer?
+    private var movementTimer: Timer?
+    private var movementOrigin: CGPoint?
+    private let syntheticMovementTag: Int64 = 0x41434D4F5645
     private var mouseLocation: NSPoint { NSEvent.mouseLocation }
     private var activity: Cancellable?
 
@@ -78,6 +81,14 @@ final class AutoClickSimulator: ObservableObject {
                                           userInfo: nil,
                                           repeats: true)
 
+        if Defaults[.randomMouseMovement], let origin = CGEvent(source: nil)?.location {
+            self.movementOrigin = origin
+            let seconds = max(1, Defaults[.randomMouseInterval])
+            self.movementTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(seconds), repeats: true) { [weak self] _ in
+                self?.moveMouseRandomly()
+            }
+        }
+
         if Defaults[.mouseStopOnMove] {
             self.initialMousePosition = nil
             self.mouseDeltaThreshold = CGFloat(Defaults[.mouseDeltaThreshold])
@@ -95,6 +106,9 @@ final class AutoClickSimulator: ObservableObject {
 
     func stop(triggeredByMouseMovement: Bool = false) {
         self.isAutoClicking = false
+        self.movementTimer?.invalidate()
+        self.movementTimer = nil
+        self.movementOrigin = nil
 
         if let monitorObject = self.monitorObject {
             NSEvent.removeMonitor(monitorObject)
@@ -188,6 +202,7 @@ final class AutoClickSimulator: ObservableObject {
     }
 
     private func mouseMoved(_ event: NSEvent) {
+        if event.cgEvent?.getIntegerValueField(.eventSourceUserData) == syntheticMovementTag { return }
         let position = event.locationInWindow
         if let initialPosition = self.initialMousePosition {
             let deltaX = position.x - initialPosition.x
@@ -214,6 +229,29 @@ final class AutoClickSimulator: ObservableObject {
             }
         } else {
             self.initialMousePosition = position
+        }
+    }
+
+    // Sample uniformly within a circle around the position at the start of the session.
+    // Reject points outside connected displays instead of jumping across a display gap.
+    private func moveMouseRandomly() {
+        guard let origin = movementOrigin else { return }
+        let radius = CGFloat(max(0, min(1000, Defaults[.randomMouseRadius])))
+        guard radius > 0 else { return }
+        for _ in 0..<20 {
+            let angle = Double.random(in: 0..<(2 * .pi))
+            let distance = radius * CGFloat(sqrt(Double.random(in: 0...1)))
+            let point = CGPoint(x: origin.x + distance * CGFloat(cos(angle)),
+                                y: origin.y + distance * CGFloat(sin(angle)))
+            guard NSScreen.screens.contains(where: { screen in
+                guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { return false }
+                return CGDisplayBounds(CGDirectDisplayID(number.uint32Value)).contains(point)
+            }) else { continue }
+            guard let event = CGEvent(mouseEventSource: nil, mouseType: .mouseMoved,
+                                      mouseCursorPosition: point, mouseButton: .left) else { return }
+            event.setIntegerValueField(.eventSourceUserData, value: syntheticMovementTag)
+            event.post(tap: .cghidEventTap)
+            return
         }
     }
 

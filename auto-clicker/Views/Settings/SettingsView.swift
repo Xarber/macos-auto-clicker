@@ -37,7 +37,7 @@ struct SettingsView: View {
                     Label("settings_shortcuts", systemImage: "keyboard")
                 }
                 .onAppear {
-                    self.changeFrameHeight(350)
+                    self.changeFrameHeight(470)
                 }
 
             AppearanceSettingsTabView()

@@ -1,0 +1,31 @@
+name: Fork build
+on:
+  push:
+    branches: ["feat/**"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Build macOS app
+        run: |
+          xcodebuild -workspace auto-clicker.xcworkspace -scheme auto-clicker -configuration Release -derivedDataPath "$RUNNER_TEMP/build" CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO build
+      - name: Validate and package
+        run: |
+          app="$RUNNER_TEMP/build/Build/Products/Release/AutoClicker.app"
+          test -d "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$RUNNER_TEMP/AutoClicker-macos-${GITHUB_SHA}.zip"
+          shasum -a 256 "$RUNNER_TEMP/AutoClicker-macos-${GITHUB_SHA}.zip" > "$RUNNER_TEMP/SHA256SUMS.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AutoClicker-macos-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/AutoClicker-macos-${{ github.sha }}.zip
+            ${{ runner.temp }}/SHA256SUMS.txt
+          if-no-files-found: error
