@@ -31,8 +31,9 @@ final class AutoClickSimulator: ObservableObject {
     private var timer: Timer?
     private var movementTimer: Timer?
     private var movementOrigin: CGPoint?
-    private let syntheticMovementTag: Int64 = 0x41434D4F5645
-    private var mouseLocation: NSPoint { NSEvent.mouseLocation }
+    private var movementRadius: CGFloat = 0
+    private var movementOverlay: NSWindow?
+    private var lastWarp: (point: CGPoint, date: Date)?
     private var activity: Cancellable?
 
     private var monitorObject: Any?
@@ -59,30 +60,16 @@ final class AutoClickSimulator: ObservableObject {
         self.activity = ProcessInfo.processInfo.beginActivity(.autoClicking)
 
         self.duration = Defaults[.autoClickerState].pressIntervalDuration
-        let intervalMode = Defaults[.autoClickerState].intervalMode
-        if intervalMode == .rangeInterval {
-            let min = Defaults[.autoClickerState].pressIntervalMin ?? DEFAULT_PRESS_INTERVAL_MIN
-            let max = Defaults[.autoClickerState].pressIntervalMax ?? DEFAULT_PRESS_INTERVAL_MAX
-            self.interval = Int.random(in: min...max)
-        } else {
-            self.interval = Defaults[.autoClickerState].pressInterval
-        }
         self.input = Defaults[.autoClickerState].pressInput
         self.amountOfPresses = Defaults[.autoClickerState].pressAmount
         self.remainingInterations = Defaults[.autoClickerState].repeatAmount
-
-        self.finalClickAt = .init(timeInterval: self.duration.asTimeInterval(interval: self.interval * self.remainingInterations), since: .init())
-
-        let timeInterval = self.duration.asTimeInterval(interval: self.interval)
-        self.nextClickAt = .init(timeInterval: timeInterval, since: .init())
-        self.timer = Timer.scheduledTimer(timeInterval: timeInterval,
-                                          target: self,
-                                          selector: #selector(self.tick),
-                                          userInfo: nil,
-                                          repeats: true)
+        self.scheduleNextPress()
 
         if Defaults[.randomMouseMovement], let origin = CGEvent(source: nil)?.location {
             self.movementOrigin = origin
+            self.movementRadius = CGFloat(max(1, min(1000, Defaults[.randomMouseRadius])))
+            self.showMovementBoundary(origin: origin, radius: self.movementRadius)
+            self.moveMouseRandomly()
             let seconds = max(1, Defaults[.randomMouseInterval])
             self.movementTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(seconds), repeats: true) { [weak self] _ in
                 self?.moveMouseRandomly()
@@ -99,9 +86,6 @@ final class AutoClickSimulator: ObservableObject {
             NotificationService.scheduleNotification(title: "Started", date: self.nextClickAt)
         }
 
-        if Defaults[.notifyOnFinish] {
-            NotificationService.scheduleNotification(title: "Finished", date: self.finalClickAt)
-        }
     }
 
     func stop(triggeredByMouseMovement: Bool = false) {
@@ -109,6 +93,9 @@ final class AutoClickSimulator: ObservableObject {
         self.movementTimer?.invalidate()
         self.movementTimer = nil
         self.movementOrigin = nil
+        self.movementOverlay?.orderOut(nil)
+        self.movementOverlay = nil
+        self.lastWarp = nil
 
         if let monitorObject = self.monitorObject {
             NSEvent.removeMonitor(monitorObject)
@@ -173,25 +160,40 @@ final class AutoClickSimulator: ObservableObject {
         }
     }
 
-    @objc private func tick() {
-        self.remainingInterations -= 1
-
-        self.press()
-
-        // Update interval if in range mode
-        let intervalMode = Defaults[.autoClickerState].intervalMode
-        if intervalMode == .rangeInterval {
-            let min = Defaults[.autoClickerState].pressIntervalMin ?? DEFAULT_PRESS_INTERVAL_MIN
-            let max = Defaults[.autoClickerState].pressIntervalMax ?? DEFAULT_PRESS_INTERVAL_MAX
-            self.interval = Int.random(in: min...max)
+    private func scheduleNextPress() {
+        let state = Defaults[.autoClickerState]
+        if state.intervalMode == .rangeInterval {
+            let first = state.pressIntervalMin ?? DEFAULT_PRESS_INTERVAL_MIN
+            let second = state.pressIntervalMax ?? DEFAULT_PRESS_INTERVAL_MAX
+            self.interval = Int.random(in: max(1, min(first, second))...max(1, max(first, second)))
         } else {
-            self.interval = Defaults[.autoClickerState].pressInterval
+            self.interval = max(1, state.pressInterval)
         }
+        let delay = self.duration.asTimeInterval(interval: self.interval)
+        self.nextClickAt = Date(timeIntervalSinceNow: delay)
+        // Future random intervals are unknown; use their midpoint for the displayed estimate.
+        let mean = state.intervalMode == .rangeInterval
+            ? (Double(state.pressIntervalMin ?? DEFAULT_PRESS_INTERVAL_MIN) + Double(state.pressIntervalMax ?? DEFAULT_PRESS_INTERVAL_MAX)) / 2
+            : Double(self.interval)
+        let unit = self.duration.asTimeInterval(interval: 1)
+        self.finalClickAt = self.nextClickAt.addingTimeInterval(unit * mean * Double(max(0, self.remainingInterations - 1)))
+        self.timer?.invalidate()
+        self.timer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
+            self?.tick()
+        }
+    }
 
-        self.nextClickAt = .init(timeInterval: self.duration.asTimeInterval(interval: self.interval), since: .init())
-
+    private func tick() {
+        guard self.isAutoClicking else { return }
+        self.remainingInterations -= 1
+        self.press()
         if self.remainingInterations <= 0 {
             self.stop()
+            if Defaults[.notifyOnFinish] {
+                NotificationService.scheduleNotification(title: "Finished", date: Date())
+            }
+        } else {
+            self.scheduleNextPress()
         }
     }
 
@@ -202,7 +204,12 @@ final class AutoClickSimulator: ObservableObject {
     }
 
     private func mouseMoved(_ event: NSEvent) {
-        if event.cgEvent?.getIntegerValueField(.eventSourceUserData) == syntheticMovementTag { return }
+        if let warp = lastWarp, Date().timeIntervalSince(warp.date) < 0.2,
+           let location = event.cgEvent?.location,
+           hypot(location.x - warp.point.x, location.y - warp.point.y) < 2 {
+            lastWarp = nil
+            return
+        }
         let position = event.locationInWindow
         if let initialPosition = self.initialMousePosition {
             let deltaX = position.x - initialPosition.x
@@ -236,7 +243,7 @@ final class AutoClickSimulator: ObservableObject {
     // Reject points outside connected displays instead of jumping across a display gap.
     private func moveMouseRandomly() {
         guard let origin = movementOrigin else { return }
-        let radius = CGFloat(max(0, min(1000, Defaults[.randomMouseRadius])))
+        let radius = movementRadius
         guard radius > 0 else { return }
         for _ in 0..<20 {
             let angle = Double.random(in: 0..<(2 * .pi))
@@ -247,12 +254,29 @@ final class AutoClickSimulator: ObservableObject {
                 guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { return false }
                 return CGDisplayBounds(CGDirectDisplayID(number.uint32Value)).contains(point)
             }) else { continue }
-            guard let event = CGEvent(mouseEventSource: nil, mouseType: .mouseMoved,
-                                      mouseCursorPosition: point, mouseButton: .left) else { return }
-            event.setIntegerValueField(.eventSourceUserData, value: syntheticMovementTag)
-            event.post(tap: .cghidEventTap)
+            lastWarp = (point, Date())
+            let result = CGWarpMouseCursorPosition(point)
+            if result != .success { lastWarp = nil }
             return
         }
+    }
+
+    private func showMovementBoundary(origin: CGPoint, radius: CGFloat) {
+        guard let mainScreen = NSScreen.screens.first else { return }
+        // Quartz uses a top-left origin; AppKit windows use a bottom-left origin.
+        let center = CGPoint(x: origin.x, y: mainScreen.frame.maxY - origin.y)
+        let frame = CGRect(x: center.x - radius - 3, y: center.y - radius - 3,
+                           width: radius * 2 + 6, height: radius * 2 + 6)
+        let window = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hasShadow = false
+        window.ignoresMouseEvents = true
+        window.level = .floating
+        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+        window.contentView = RadiusBoundaryView(frame: CGRect(origin: .zero, size: frame.size))
+        window.orderFrontRegardless()
+        movementOverlay = window
     }
 
     private let mouseDownEventMap: [NSEvent.EventType: CGEventType] = [
@@ -283,10 +307,7 @@ final class AutoClickSimulator: ObservableObject {
     ]
 
     private func generateMouseClickEvents(source: CGEventSource?) -> [CGEvent?] {
-        let mouseX = self.mouseLocation.x
-        let mouseY = NSScreen.screens[0].frame.height - mouseLocation.y
-
-        let clickingAtPoint = CGPoint(x: mouseX, y: mouseY)
+        let clickingAtPoint = CGEvent(source: nil)?.location ?? .zero
 
         let mouseDownType: CGEventType = mouseDownEventMap[self.input.type]!
         let mouseUpType: CGEventType = mouseUpEventMap[self.input.type]!
@@ -338,6 +359,13 @@ final class AutoClickSimulator: ObservableObject {
     }
 
     private func press() {
+        // Keep automated clicks in the marked circle even if the user moved the pointer.
+        if self.input.isMouseInput, let origin = self.movementOrigin,
+           let current = CGEvent(source: nil)?.location,
+           hypot(current.x - origin.x, current.y - origin.y) > self.movementRadius {
+            self.lastWarp = (origin, Date())
+            if CGWarpMouseCursorPosition(origin) != .success { return }
+        }
         let source: CGEventSource? = CGEventSource(stateID: .hidSystemState)
 
         let pressEvents = self.input.isMouseInput
@@ -355,5 +383,19 @@ final class AutoClickSimulator: ObservableObject {
 
             completedPressesThisAction += 1
         }
+    }
+}
+
+private final class RadiusBoundaryView: NSView {
+    override func draw(_ dirtyRect: NSRect) {
+        let circle = NSBezierPath(ovalIn: bounds.insetBy(dx: 3, dy: 3))
+        NSColor.systemBlue.withAlphaComponent(0.08).setFill()
+        circle.fill()
+        NSColor.white.withAlphaComponent(0.9).setStroke()
+        circle.lineWidth = 4
+        circle.stroke()
+        NSColor.systemBlue.setStroke()
+        circle.lineWidth = 2
+        circle.stroke()
     }
 }

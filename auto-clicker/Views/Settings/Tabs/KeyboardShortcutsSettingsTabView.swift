@@ -52,10 +52,10 @@ struct KeyboardShortcutsSettingsTabView: View {
                 )
             }
 
-            SettingsTabItemView(title: "Random cursor movement", help: "Moves within a circle around the starting position while clicking. Changes take effect on the next start.") {
+            SettingsTabItemView(title: "Random cursor movement", help: "A circle marks the area around the cursor when clicking starts. Automated movement stays inside it. Settings apply on the next start.") {
                 Defaults.Toggle(" Enable random movement", key: .randomMouseMovement)
                 HStack {
-                    Text("Radius (pixels)")
+                    Text("Radius (points)")
                     NumberField(text: "", min: 1, max: 1000, number: Binding(
                         get: { Defaults[.randomMouseRadius] }, set: { Defaults[.randomMouseRadius] = $0 }))
                         .frame(width: 70)

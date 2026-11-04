@@ -204,9 +204,9 @@ struct MainView: View {
                     Spacer()
 
                     StatBox(title: "main_window_stat_box_final_press_at",
-                            value: self.hasStarted
+                            value: (self.formState.intervalMode == .rangeInterval ? "~" : "") + (self.hasStarted
                                    ? self.autoClickSimulator.finalClickAt.asString(inFormat: "yyyy-MM-dd HH:mm:ss.SSS")
-                                   : self.estFinalClickAt.asString(inFormat: "yyyy-MM-dd HH:mm:ss.SSS"))
+                                   : self.estFinalClickAt.asString(inFormat: "yyyy-MM-dd HH:mm:ss.SSS")))
 
                     Spacer()
                 }
