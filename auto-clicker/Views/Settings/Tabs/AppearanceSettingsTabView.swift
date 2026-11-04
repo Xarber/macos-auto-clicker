@@ -35,6 +35,8 @@ struct AppearanceSettingsTabView: View {
                         .padding(.bottom, 15)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(Text(colour.localised))
+                    .accessibilityAddTraits(colour == self.activeTheme.currentColour ? .isSelected : [])
                 }
             }
             .padding(.top, 15)

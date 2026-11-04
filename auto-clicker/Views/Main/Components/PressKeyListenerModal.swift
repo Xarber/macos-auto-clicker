@@ -43,19 +43,24 @@ struct PressKeyListenerModal: View {
     }
 
     var body: some View {
-        VStack {
+        VStack(spacing: 12) {
+            Image(systemName: "keyboard")
+                .font(.system(size: 22, weight: .medium))
+                .accessibilityHidden(true)
             SmallText("key_listener_modal_press_prompt")
 
             Spacer()
 
             Text(self.formState.pressInput.readable)
+                .font(.system(size: 22, weight: .semibold, design: .rounded))
+                .accessibilityLabel(self.formState.pressInput.readable)
 
             Spacer()
 
             SmallText("key_listener_modal_dismiss_key_prompt")
             SmallText("key_listener_modal_dismiss_key_override")
         }
-        .frame(width: 300, height: 150)
+        .frame(width: 340, height: 190)
         .padding(.vertical, 14)
         .padding(.horizontal, 5)
         .background(self.activeTheme.backgroundColour)

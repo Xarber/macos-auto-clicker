@@ -40,7 +40,7 @@ struct PermissionsView: View {
 
             VStack(spacing: 8) {
                 Text("permissions_help_unlock_note", comment: "Permissions helper splash window unlock note")
-                Text("If access was already enabled, remove the old AutoClicker entry in Privacy & Security → Accessibility, quit and reopen the app, then grant access again. A rebuilt app may need a new approval.")
+                Text("fork_permission_recovery")
             }
             .font(.caption)
             .multilineTextAlignment(.center)

@@ -87,29 +87,29 @@ struct MainView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("AutoClicker")
                             .font(.system(size: 25, weight: .semibold, design: .rounded))
-                        Text("Configure an action, then start when you are ready.")
+                        Text("fork_setup_subtitle")
                             .font(.callout)
                             .opacity(0.8)
                     }
                     Spacer()
-                    Label(self.hasStarted ? (self.delayTimer.isCountingDown ? "Starting" : "Running") : "Ready",
+                    Label(NSLocalizedString(self.hasStarted ? (self.delayTimer.isCountingDown ? "fork_starting" : "fork_running") : "fork_ready", comment: "Session status"),
                           systemImage: self.hasStarted ? "play.circle.fill" : "checkmark.circle")
                         .font(.system(size: 12, weight: .semibold))
                         .padding(.horizontal, 12)
                         .padding(.vertical, 7)
                         .background(Color.black.opacity(0.16), in: Capsule())
-                        .accessibilityLabel(self.hasStarted ? "Clicker active" : "Clicker ready")
+                        .accessibilityLabel(LocalizedStringKey(self.hasStarted ? "fork_active_accessibility" : "fork_ready_accessibility"))
                 }
                 .padding(.top, 18)
 
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Label("Click setup", systemImage: "cursorarrow.click")
+                        Label("fork_click_setup", systemImage: "cursorarrow.click")
                             .font(.headline)
                         Spacer()
-                        Picker("Timing", selection: self.$formState.intervalMode) {
-                            Text("Fixed").tag(IntervalMode.staticInterval)
-                            Text("Random").tag(IntervalMode.rangeInterval)
+                        Picker("fork_timing", selection: self.$formState.intervalMode) {
+                            Text("fork_fixed").tag(IntervalMode.staticInterval)
+                            Text("fork_random").tag(IntervalMode.rangeInterval)
                         }
                         .pickerStyle(.segmented)
                         .frame(width: 160)
@@ -190,28 +190,28 @@ struct MainView: View {
 
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Label("Cursor area", systemImage: "scope")
+                        Label("fork_cursor_area", systemImage: "scope")
                             .font(.headline)
                         Spacer()
-                        Toggle("Random movement", isOn: self.$randomMouseMovement)
+                        Toggle("fork_random_movement", isOn: self.$randomMouseMovement)
                             .toggleStyle(.switch)
                             .disabled(self.hasStarted)
                     }
                     if self.randomMouseMovement {
                         HStack {
-                            Text("Radius")
+                            Text("fork_radius")
                             NumberField(text: "", min: 1, max: 1000, number: self.$randomMouseRadius)
                                 .frame(width: 64)
-                            Text("points")
+                            Text("fork_points")
                             Spacer(minLength: 12)
-                            Text("Move every")
+                            Text("fork_move_every")
                             NumberField(text: "", min: 1, max: 3600, number: self.$randomMouseInterval)
                                 .frame(width: 64)
-                            Text("sec")
+                            Text("fork_seconds_short")
                         }
                         .font(.callout)
                         .disabled(self.hasStarted)
-                        Text("A circle marks the area around the cursor when the session starts.")
+                        Text("fork_area_help")
                             .font(.caption)
                             .opacity(0.8)
                     }
@@ -222,7 +222,7 @@ struct MainView: View {
                 HStack(alignment: .top, spacing: 12) {
                     VStack(spacing: 5) {
                         Button(action: self.start) {
-                            Label(self.hasStarted && self.delayTimer.isCountingDown ? self.delayTimer.countdownText : "Start",
+                            Label(self.hasStarted && self.delayTimer.isCountingDown ? self.delayTimer.countdownText : NSLocalizedString("fork_start", comment: "Start"),
                                   systemImage: "play.fill")
                                 .frame(maxWidth: .infinity)
                         }
@@ -234,7 +234,7 @@ struct MainView: View {
                     }
                     VStack(spacing: 5) {
                         Button(action: self.stop) {
-                            Label("Stop", systemImage: "stop.fill")
+                            Label("fork_stop", systemImage: "stop.fill")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(ThemedButtonStyle(fontSize: 18, width: 130, height: 42))
@@ -246,7 +246,7 @@ struct MainView: View {
                     Spacer()
                     if self.autoClickSimulator.isAutoClicking {
                         VStack(alignment: .trailing, spacing: 5) {
-                            Text("Remaining").font(.caption).opacity(0.8)
+                            Text("fork_remaining").font(.caption).opacity(0.8)
                             Text("\(self.autoClickSimulator.remainingInterations)")
                                 .font(.system(size: 22, weight: .semibold, design: .rounded))
                                 .monospacedDigit()
@@ -274,7 +274,7 @@ struct MainView: View {
                     }
                     .buttonStyle(.plain)
                     .opacity(0.7)
-                    .accessibilityLabel("Change color theme")
+                    .accessibilityLabel("fork_change_theme")
                 }
             }
             .foregroundColor(self.activeTheme.fontColour)

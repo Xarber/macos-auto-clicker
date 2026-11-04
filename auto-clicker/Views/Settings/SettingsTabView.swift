@@ -12,9 +12,12 @@ struct SettingsTabView<Content: View>: ContainerView {
 
     var body: some View {
         GroupBox {
-            Form(content: self.content)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                .padding()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 6, content: self.content)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(20)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
     }
 }

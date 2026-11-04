@@ -128,3 +128,32 @@
 "left_mouse_click" = "Left Mouse";
 "right_mouse_click" = "Right Mouse";
 "middle_mouse_click" = "Middle Mouse";
+
+/* Fork interface */
+"fork_setup_subtitle" = "Configure an action, then start when you are ready.";
+"fork_click_setup" = "Click setup";
+"fork_timing" = "Timing";
+"fork_fixed" = "Fixed";
+"fork_random" = "Random";
+"fork_cursor_area" = "Cursor area";
+"fork_random_movement" = "Random movement";
+"fork_radius" = "Radius";
+"fork_points" = "points";
+"fork_move_every" = "Move every";
+"fork_seconds_short" = "sec";
+"fork_area_help" = "A circle marks the area around the cursor when the session starts.";
+"fork_remaining" = "Remaining";
+"fork_change_theme" = "Change colour theme";
+"fork_starting" = "Starting";
+"fork_running" = "Running";
+"fork_ready" = "Ready";
+"fork_active_accessibility" = "Clicker active";
+"fork_ready_accessibility" = "Clicker ready";
+"fork_start" = "Start";
+"fork_stop" = "Stop";
+"fork_random_cursor_title" = "Random cursor movement";
+"fork_random_cursor_help" = "A circle marks the area around the cursor when clicking starts. Automated movement stays inside it. Settings apply on the next start.";
+"fork_enable_random" = "Enable random movement";
+"fork_radius_points" = "Radius (points)";
+"fork_interval_seconds" = "Interval (seconds)";
+"fork_permission_recovery" = "If access was already enabled, remove the old AutoClicker entry in Privacy & Security → Accessibility, quit and reopen the app, then grant access again. A rebuilt app may need a new approval.";

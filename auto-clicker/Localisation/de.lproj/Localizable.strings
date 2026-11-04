@@ -120,3 +120,32 @@
 "left_mouse_click" = "Linke Maustaste";
 "right_mouse_click" = "Rechte Maustaste";
 "middle_mouse_click" = "Mittlere Maustaste";
+
+/* Fork interface */
+"fork_setup_subtitle" = "Aktion konfigurieren und starten, sobald du bereit bist.";
+"fork_click_setup" = "Klick-Einstellungen";
+"fork_timing" = "Intervall";
+"fork_fixed" = "Fest";
+"fork_random" = "Zufällig";
+"fork_cursor_area" = "Cursorbereich";
+"fork_random_movement" = "Zufällige Bewegung";
+"fork_radius" = "Radius";
+"fork_points" = "Punkte";
+"fork_move_every" = "Bewegen alle";
+"fork_seconds_short" = "Sek.";
+"fork_area_help" = "Ein Kreis markiert beim Start den Bereich um den Cursor.";
+"fork_remaining" = "Verbleibend";
+"fork_change_theme" = "Farbthema ändern";
+"fork_starting" = "Startet";
+"fork_running" = "Aktiv";
+"fork_ready" = "Bereit";
+"fork_active_accessibility" = "Auto-Klicker aktiv";
+"fork_ready_accessibility" = "Auto-Klicker bereit";
+"fork_start" = "Starten";
+"fork_stop" = "Stoppen";
+"fork_random_cursor_title" = "Zufällige Cursorbewegung";
+"fork_random_cursor_help" = "Ein Kreis markiert beim Start den Cursorbereich. Automatische Bewegungen bleiben darin. Änderungen gelten beim nächsten Start.";
+"fork_enable_random" = "Zufällige Bewegung aktivieren";
+"fork_radius_points" = "Radius (Punkte)";
+"fork_interval_seconds" = "Intervall (Sekunden)";
+"fork_permission_recovery" = "Wenn der Zugriff bereits aktiviert war, entferne den alten AutoClicker-Eintrag unter Datenschutz & Sicherheit → Bedienungshilfen. Beende und öffne die App erneut und erlaube den Zugriff. Ein neuer Build benötigt möglicherweise eine neue Freigabe.";

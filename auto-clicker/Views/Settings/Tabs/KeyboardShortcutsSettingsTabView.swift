@@ -52,14 +52,14 @@ struct KeyboardShortcutsSettingsTabView: View {
                 )
             }
 
-            SettingsTabItemView(title: "Random cursor movement", help: "A circle marks the area around the cursor when clicking starts. Automated movement stays inside it. Settings apply on the next start.") {
-                Defaults.Toggle(" Enable random movement", key: .randomMouseMovement)
+            SettingsTabItemView(title: "fork_random_cursor_title", help: "fork_random_cursor_help") {
+                Defaults.Toggle("fork_enable_random", key: .randomMouseMovement)
                 HStack {
-                    Text("Radius (points)")
+                    Text("fork_radius_points")
                     NumberField(text: "", min: 1, max: 1000, number: Binding(
                         get: { Defaults[.randomMouseRadius] }, set: { Defaults[.randomMouseRadius] = $0 }))
                         .frame(width: 70)
-                    Text("Interval (seconds)")
+                    Text("fork_interval_seconds")
                     NumberField(text: "", min: 1, max: 3600, number: Binding(
                         get: { Defaults[.randomMouseInterval] }, set: { Defaults[.randomMouseInterval] = $0 }))
                         .frame(width: 70)
