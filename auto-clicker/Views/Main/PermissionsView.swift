@@ -16,39 +16,41 @@ struct PermissionsView: View {
     }
 
     var body: some View {
-        VStack {
-            Text("permissions_help_title", comment: "Permissions helper splash window title")
-                .font(.system(size: 32))
-                .padding(.bottom, 25)
+        VStack(spacing: 20) {
+            Image(systemName: "hand.raised.fill")
+                .font(.system(size: 30, weight: .medium))
+                .padding(20)
+                .background(Color.black.opacity(0.14), in: Circle())
+                .accessibilityHidden(true)
 
-            Text("permissions_help_first_paragraph", comment: "Permissions helper splash window description")
-                .font(.system(size: 16))
-                .multilineTextAlignment(.center)
-                .padding(.bottom, 15)
-
-            Text("permissions_help_second_paragraph", comment: "Permissions helper splash window description extended")
-                .font(.system(size: 16))
-                .multilineTextAlignment(.center)
-                .padding(.bottom, 25)
+            VStack(spacing: 10) {
+                Text("permissions_help_title", comment: "Permissions helper splash window title")
+                    .font(.system(size: 25, weight: .semibold, design: .rounded))
+                Text("permissions_help_first_paragraph", comment: "Permissions helper splash window description")
+                    .font(.body)
+                Text("permissions_help_second_paragraph", comment: "Permissions helper splash window description extended")
+                    .font(.callout)
+            }
+            .multilineTextAlignment(.center)
 
             Button(action: openSystemPreferences) {
-                Text("permissions_help_open_sys_pref_btn", comment: "Open system preferences button")
+                Label("permissions_help_open_sys_pref_btn", systemImage: "gearshape")
             }
             .buttonStyle(ThemedButtonStyle(fontSize: 16, width: 220))
-            .padding(.bottom, 25)
 
-            Text("If access was already enabled, remove the old AutoClicker entry in Privacy & Security → Accessibility, quit and reopen the app, then grant access again. A rebuilt app may need a new approval.")
-                .font(.system(size: 12))
-                .multilineTextAlignment(.center)
-                .padding(.bottom, 12)
-
-            Text("permissions_help_unlock_note", comment: "Permissions helper splash window unlock note")
-                .font(.system(size: 12))
-                .multilineTextAlignment(.center)
+            VStack(spacing: 8) {
+                Text("permissions_help_unlock_note", comment: "Permissions helper splash window unlock note")
+                Text("If access was already enabled, remove the old AutoClicker entry in Privacy & Security → Accessibility, quit and reopen the app, then grant access again. A rebuilt app may need a new approval.")
+            }
+            .font(.caption)
+            .multilineTextAlignment(.center)
+            .opacity(0.85)
         }
         .foregroundColor(self.activeTheme.fontColour)
-        .padding(.horizontal, 35)
+        .padding(28)
+        .frame(maxWidth: 520)
     }
+
 }
 
 struct PermissionsView_Previews: PreviewProvider {

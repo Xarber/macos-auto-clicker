@@ -13,6 +13,9 @@ import Defaults
 struct MainView: View {
     @Default(.appearanceSelectedTheme) private var activeTheme
     @Default(.autoClickerState) private var formState
+    @Default(.randomMouseMovement) private var randomMouseMovement
+    @Default(.randomMouseRadius) private var randomMouseRadius
+    @Default(.randomMouseInterval) private var randomMouseInterval
 
     @StateObject private var autoClickSimulator = AutoClickSimulator.shared
     @StateObject private var delayTimer = DelayTimer.shared
@@ -78,10 +81,41 @@ struct MainView: View {
     }
 
     var body: some View {
-        VStack {
-            // MARK: - Action Stage
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("AutoClicker")
+                            .font(.system(size: 25, weight: .semibold, design: .rounded))
+                        Text("Configure an action, then start when you are ready.")
+                            .font(.callout)
+                            .opacity(0.8)
+                    }
+                    Spacer()
+                    Label(self.hasStarted ? (self.delayTimer.isCountingDown ? "Starting" : "Running") : "Ready",
+                          systemImage: self.hasStarted ? "play.circle.fill" : "checkmark.circle")
+                        .font(.system(size: 12, weight: .semibold))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(Color.black.opacity(0.16), in: Capsule())
+                        .accessibilityLabel(self.hasStarted ? "Clicker active" : "Clicker ready")
+                }
+                .padding(.top, 18)
 
-            VStack {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Label("Click setup", systemImage: "cursorarrow.click")
+                            .font(.headline)
+                        Spacer()
+                        Picker("Timing", selection: self.$formState.intervalMode) {
+                            Text("Fixed").tag(IntervalMode.staticInterval)
+                            Text("Random").tag(IntervalMode.rangeInterval)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 160)
+                        .disabled(self.hasStarted)
+                    }
+                    Divider().overlay(self.activeTheme.fontColour.opacity(0.2))
                 ActionStageLine {
                     Text("main_window_every", comment: "Main window 'Every'")
 
@@ -150,90 +184,106 @@ struct MainView: View {
 
                     Text(self.formState.startDelay == 1 ? "main_window_second" : "main_window_seconds", comment: "Main window 'second(s)'") + Text("main_window_before_starting", comment: "Main window 'before starting'") + Text("main_window_full_stop", comment: "Main window full stop")
                 }
-            }
-            .padding(.top, 20)
-            .padding(.leading, 20)
-            .padding(.bottom, 20)
+                }
+                .padding(18)
+                .background(Color.black.opacity(0.13), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
 
-            // MARK: - Buttons
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Label("Cursor area", systemImage: "scope")
+                            .font(.headline)
+                        Spacer()
+                        Toggle("Random movement", isOn: self.$randomMouseMovement)
+                            .toggleStyle(.switch)
+                            .disabled(self.hasStarted)
+                    }
+                    if self.randomMouseMovement {
+                        HStack {
+                            Text("Radius")
+                            NumberField(text: "", min: 1, max: 1000, number: self.$randomMouseRadius)
+                                .frame(width: 64)
+                            Text("points")
+                            Spacer(minLength: 12)
+                            Text("Move every")
+                            NumberField(text: "", min: 1, max: 3600, number: self.$randomMouseInterval)
+                                .frame(width: 64)
+                            Text("sec")
+                        }
+                        .font(.callout)
+                        .disabled(self.hasStarted)
+                        Text("A circle marks the area around the cursor when the session starts.")
+                            .font(.caption)
+                            .opacity(0.8)
+                    }
+                }
+                .padding(18)
+                .background(Color.black.opacity(0.13), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
 
-            HStack {
-                VStack {
-                    Button(action: self.start) {
-                        if self.hasStarted {
-                            Text(self.delayTimer.countdownText).kerning(1)
-                        } else {
-                            Text("main_window_start_btn", comment: "Main window start button").kerning(1)
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(spacing: 5) {
+                        Button(action: self.start) {
+                            Label(self.hasStarted && self.delayTimer.isCountingDown ? self.delayTimer.countdownText : "Start",
+                                  systemImage: "play.fill")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(ThemedButtonStyle(fontSize: 18, width: 130, height: 42))
+                        .disabled(self.hasStarted)
+                        if let shortcut = KeyboardShortcuts.Name.pressStartButton.shortcut {
+                            KeyboardShortcutHint(shortcut: shortcut)
                         }
                     }
-                    .disabled(self.hasStarted)
-                    .buttonStyle(ThemedButtonStyle())
-
-                    KeyboardShortcutHint(shortcut: KeyboardShortcuts.Name.pressStartButton.shortcut ?? KeyboardShortcuts.Name.pressStartButton.defaultShortcut!)
-                }
-
-                VStack {
-                    Button(action: self.stop) {
-                        Text("main_window_stop_btn", comment: "Main window stop button").kerning(1)
+                    VStack(spacing: 5) {
+                        Button(action: self.stop) {
+                            Label("Stop", systemImage: "stop.fill")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(ThemedButtonStyle(fontSize: 18, width: 130, height: 42))
+                        .disabled(self.hasStopped)
+                        if let shortcut = KeyboardShortcuts.Name.pressStopButton.shortcut {
+                            KeyboardShortcutHint(shortcut: shortcut)
+                        }
                     }
-                    .disabled(self.hasStopped)
-                    .buttonStyle(ThemedButtonStyle())
-
-                    KeyboardShortcutHint(shortcut: KeyboardShortcuts.Name.pressStopButton.shortcut ?? KeyboardShortcuts.Name.pressStopButton.defaultShortcut!)
+                    Spacer()
+                    if self.autoClickSimulator.isAutoClicking {
+                        VStack(alignment: .trailing, spacing: 5) {
+                            Text("Remaining").font(.caption).opacity(0.8)
+                            Text("\(self.autoClickSimulator.remainingInterations)")
+                                .font(.system(size: 22, weight: .semibold, design: .rounded))
+                                .monospacedDigit()
+                        }
+                    }
                 }
 
-                Spacer()
-            }
-            .padding(.leading, 20)
+                if self.autoClickSimulator.isAutoClicking {
+                    HStack(spacing: 24) {
+                        StatBox(title: "main_window_stat_box_next_press_at",
+                                value: self.autoClickSimulator.nextClickAt.asString(inFormat: "HH:mm:ss.SSS"))
+                        StatBox(title: "main_window_stat_box_final_press_at",
+                                value: (self.formState.intervalMode == .rangeInterval ? "~" : "") + self.autoClickSimulator.finalClickAt.asString(inFormat: "HH:mm:ss.SSS"))
+                        Spacer()
+                    }
+                    .padding(14)
+                    .background(Color.black.opacity(0.13), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
 
-            // MARK: - Spacer
-
-            Spacer()
-
-            // MARK: - Stats
-
-            VStack {
                 HStack {
                     Spacer()
-
-                    StatBox(title: "main_window_stat_box_next_press_at",
-                            value: self.hasStarted
-                                   ? self.autoClickSimulator.nextClickAt.asString(inFormat: "yyyy-MM-dd HH:mm:ss.SSS")
-                                   : self.estNextClickAt.asString(inFormat: "yyyy-MM-dd HH:mm:ss.SSS"))
-
-                    Spacer()
-
-                    StatBox(title: "main_window_stat_box_final_press_at",
-                            value: (self.formState.intervalMode == .rangeInterval ? "~" : "") + (self.hasStarted
-                                   ? self.autoClickSimulator.finalClickAt.asString(inFormat: "yyyy-MM-dd HH:mm:ss.SSS")
-                                   : self.estFinalClickAt.asString(inFormat: "yyyy-MM-dd HH:mm:ss.SSS")))
-
-                    Spacer()
-                }
-                .padding(.top, 18)
-                .padding(.bottom, 10)
-
-                // MARK: - Pretty Text
-
-                HStack {
-                    if self.showThemeName {
-                        Text(self.activeTheme.currentColour.localised, comment: "Colour Enum")
-                            .font(.system(size: 10, weight: .medium, design: .rounded))
-                            .foregroundColor(self.activeTheme.backgroundColour.lighter)
-                            .padding(.trailing, -5)
+                    Button(action: self.changeColour) {
+                        Text(self.showThemeName ? self.activeTheme.currentColour.localised : "main_window_repo_vanity")
+                            .font(.caption2)
                     }
-
-                    Text("main_window_repo_vanity", comment: "Main window repo vanity plate")
-                        .font(.system(size: 10, weight: .medium, design: .rounded))
-                        .foregroundColor(self.activeTheme.backgroundColour.lighter)
-                        .onTapGesture(perform: self.changeColour)
+                    .buttonStyle(.plain)
+                    .opacity(0.7)
+                    .accessibilityLabel("Change color theme")
                 }
-                .padding(.bottom, 12)
             }
-            .background(self.activeTheme.backgroundColour.darker)
+            .foregroundColor(self.activeTheme.fontColour)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 20)
         }
         .onAppear(perform: self.registerKeyboardShortcuts)
     }
+
 }
 
 // struct ActionStageView_Previews: PreviewProvider {

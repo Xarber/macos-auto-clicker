@@ -16,9 +16,9 @@ struct ActionStageLine<Content: View>: View {
     var body: some View {
         HStack {
             HStack(content: content)
-                .font(.system(size: 32, weight: .light))
+                .font(.system(size: 17, weight: .regular))
                 .foregroundColor(self.activeTheme.fontColour)
-                .padding(.bottom, 5)
+                .padding(.vertical, 2)
 
             Spacer()
         }

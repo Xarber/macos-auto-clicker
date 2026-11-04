@@ -15,3 +15,9 @@ Outstanding upstream requests include idle activation, hold-to-run and hold inpu
 Random intervals now schedule a new one-shot timer for every press; the displayed final time in range mode is an estimate. The completion notification is scheduled when the final press occurs. Reversed range endpoints are accepted safely.
 
 When movement is enabled, the initial cursor position is captured once. A click-through circle shows the fixed area until the session stops. Movement begins immediately and then uses the configured interval; generated positions are restricted to that circle and connected display bounds. If the user moves outside the circle, an automated mouse click first returns to the center; the user can still move the mouse freely to retain control and use stop-on-movement. The circle is expressed in macOS screen points (which need not equal physical pixels on Retina displays). Display changes, full-screen windows, and the interaction with stop-on-movement require validation on real hardware.
+
+## Interface redesign
+
+The main window groups click setup, cursor area, run controls, and live session status. Fixed and random timing can be selected alongside their values; cursor movement settings are also accessible directly. The existing input recorder, duration selector, themes, keyboard shortcuts, notifications, menu bar, and settings remain in use. The permission screen now presents the request and recovery steps as a focused task. The layout uses native SwiftUI controls, adapts to window resizing and supports scrolling.
+
+The redesign retains the existing theme system and macOS 13 minimum; it does not claim use of system Liquid Glass. Visual accessibility, localization of newly added English labels, dark/light themes, and real-device interaction require further verification.

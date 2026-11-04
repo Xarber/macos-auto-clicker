@@ -21,7 +21,7 @@ struct AutoClickerApp: App {
                        maxWidth: WindowStateService.mainWindowMinWidth * WindowStateService.mainWindowMaxDimensionMultiplier,
                        minHeight: WindowStateService.mainWindowMinHeight,
                        idealHeight: WindowStateService.mainWindowMinHeight,
-                       maxHeight: WindowStateService.mainWindowMinHeight)
+                       maxHeight: WindowStateService.mainWindowMinHeight * WindowStateService.mainWindowMaxDimensionMultiplier)
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
