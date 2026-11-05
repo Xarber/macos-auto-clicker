@@ -21,3 +21,9 @@ When movement is enabled, the initial cursor position is captured once. A click-
 The main window groups click setup, cursor area, run controls, and live session status. Fixed and random timing can be selected alongside their values; cursor movement settings are also accessible directly. The existing input recorder, duration selector, themes, keyboard shortcuts, notifications, menu bar, and settings remain in use. The permission screen now presents the request and recovery steps as a focused task. The layout uses native SwiftUI controls, adapts to window resizing and supports scrolling.
 
 The redesign retains the existing theme system and macOS 13 minimum; it does not claim use of system Liquid Glass. New interface labels include English, German and Latin American Spanish translations. Settings content scrolls and theme choices expose their names to accessibility. Visual accessibility, dark/light themes, translations in context, and real-device interaction require further verification.
+
+## Movement and countdown
+
+Cursor movement uses a short eased quadratic path. Its control points remain in the session circle, and paths abort if they cross a display gap. The radius slider displays a temporary circle centered at the cursor when editing begins; it disappears when slider editing ends. The active session captures its own center at start. Manual pointer movement remains possible.
+
+The main view displays a countdown based on the next scheduled click. Its floating countdown button minimizes the main window and opens a small always-on-top panel; closing or expanding the panel restores the main window. The panel shows Ready once clicking finishes. Real-device testing of movement, previews, multi-display behavior and window lifecycle remains required.

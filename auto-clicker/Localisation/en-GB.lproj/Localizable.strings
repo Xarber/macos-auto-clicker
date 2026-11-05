@@ -157,3 +157,6 @@
 "fork_radius_points" = "Radius (points)";
 "fork_interval_seconds" = "Interval (seconds)";
 "fork_permission_recovery" = "If access was already enabled, remove the old AutoClicker entry in Privacy & Security → Accessibility, quit and reopen the app, then grant access again. A rebuilt app may need a new approval.";
+"fork_next_click" = "Next click";
+"fork_floating_countdown" = "Floating countdown";
+"fork_expand" = "Show main window";

@@ -149,3 +149,6 @@
 "fork_radius_points" = "Radius (Punkte)";
 "fork_interval_seconds" = "Intervall (Sekunden)";
 "fork_permission_recovery" = "Wenn der Zugriff bereits aktiviert war, entferne den alten AutoClicker-Eintrag unter Datenschutz & Sicherheit → Bedienungshilfen. Beende und öffne die App erneut und erlaube den Zugriff. Ein neuer Build benötigt möglicherweise eine neue Freigabe.";
+"fork_next_click" = "Nächster Klick";
+"fork_floating_countdown" = "Schwebender Countdown";
+"fork_expand" = "Hauptfenster anzeigen";

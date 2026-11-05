@@ -203,6 +203,11 @@ struct MainView: View {
                             NumberField(text: "", min: 1, max: 1000, number: self.$randomMouseRadius)
                                 .frame(width: 64)
                             Text("fork_points")
+                            Slider(value: Binding(get: { Double(self.randomMouseRadius) }, set: { self.randomMouseRadius = Int($0) }), in: 1...1000, step: 1, onEditingChanged: { editing in
+                                if editing { self.autoClickSimulator.updateRadiusPreview(self.randomMouseRadius) }
+                                else { self.autoClickSimulator.endRadiusPreview() }
+                            })
+                            .accessibilityLabel("fork_radius")
                             Spacer(minLength: 12)
                             Text("fork_move_every")
                             NumberField(text: "", min: 1, max: 3600, number: self.$randomMouseInterval)
@@ -256,6 +261,17 @@ struct MainView: View {
 
                 if self.autoClickSimulator.isAutoClicking {
                     HStack(spacing: 24) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("fork_next_click").font(.caption)
+                            Text(timerInterval: Date()...max(Date(), self.autoClickSimulator.nextClickAt), countsDown: true)
+                                .monospacedDigit()
+                                .font(.headline)
+                        }
+                        Button { FloatingCountdown.shared.show() } label: {
+                            Image(systemName: "pip.enter")
+                        }
+                        .help("fork_floating_countdown")
+                        .accessibilityLabel("fork_floating_countdown")
                         StatBox(title: "main_window_stat_box_next_press_at",
                                 value: self.autoClickSimulator.nextClickAt.asString(inFormat: "HH:mm:ss.SSS"))
                         StatBox(title: "main_window_stat_box_final_press_at",
@@ -282,6 +298,13 @@ struct MainView: View {
             .padding(.bottom, 20)
         }
         .onAppear(perform: self.registerKeyboardShortcuts)
+        .onChange(of: self.randomMouseRadius) { value in
+            if !self.hasStarted { self.autoClickSimulator.updateRadiusPreview(value) }
+        }
+        .onChange(of: self.randomMouseMovement) { enabled in
+            if !enabled { self.autoClickSimulator.endRadiusPreview() }
+        }
+        .onDisappear { self.autoClickSimulator.endRadiusPreview() }
     }
 
 }
@@ -294,3 +317,70 @@ struct MainView: View {
 //            .padding(10)
 //    }
 // }
+
+private final class FloatingCountdown: NSObject, NSWindowDelegate {
+    static let shared = FloatingCountdown()
+    private var panel: NSPanel?
+    private weak var mainWindow: NSWindow?
+
+    func show() {
+        if let panel = panel {
+            panel.orderFrontRegardless()
+            return
+        }
+        mainWindow = NSApp.mainWindow
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 200, height: 84),
+                            styleMask: [.titled, .closable, .nonactivatingPanel],
+                            backing: .buffered, defer: false)
+        panel.title = NSLocalizedString("fork_next_click", comment: "Next click")
+        panel.isFloatingPanel = true
+        panel.level = .floating
+        panel.hidesOnDeactivate = false
+        panel.isReleasedWhenClosed = false
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.delegate = self
+        panel.contentView = NSHostingView(rootView: FloatingCountdownView(onExpand: { [weak self] in self?.close() }))
+        panel.center()
+        self.panel = panel
+        panel.orderFrontRegardless()
+        mainWindow?.miniaturize(nil)
+    }
+
+    func close() { panel?.close() }
+
+    func windowWillClose(_ notification: Notification) {
+        panel = nil
+        mainWindow?.deminiaturize(nil)
+        mainWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+}
+
+private struct FloatingCountdownView: View {
+    @ObservedObject private var simulator = AutoClickSimulator.shared
+    @ObservedObject private var delay = DelayTimer.shared
+    var onExpand: () -> Void
+
+    var body: some View {
+        HStack {
+            TimelineView(.periodic(from: .now, by: 0.1)) { context in
+                if simulator.isAutoClicking {
+                    Text(String(format: "%.1f s", max(0, simulator.nextClickAt.timeIntervalSince(context.date))))
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
+                } else if delay.isCountingDown {
+                    Text(delay.countdownText).font(.title2).monospacedDigit()
+                } else {
+                    Text("fork_ready").font(.headline)
+                }
+            }
+            Spacer()
+            Button(action: onExpand) { Image(systemName: "arrow.up.left.and.arrow.down.right") }
+                .buttonStyle(.plain)
+                .help("fork_expand")
+                .accessibilityLabel("fork_expand")
+        }
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}

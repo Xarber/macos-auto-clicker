@@ -30,6 +30,9 @@ final class AutoClickSimulator: ObservableObject {
 
     private var timer: Timer?
     private var movementTimer: Timer?
+    private var motionTimer: Timer?
+    private var previewWindow: NSWindow?
+    private var previewOrigin: CGPoint?
     private var movementOrigin: CGPoint?
     private var movementRadius: CGFloat = 0
     private var movementOverlay: NSWindow?
@@ -42,6 +45,7 @@ final class AutoClickSimulator: ObservableObject {
     private var mouseDeltaThreshold: CGFloat = 0.0
 
     func start() {
+        self.endRadiusPreview()
         self.isAutoClicking = true
 
         // Stop mouse start monitoring if it's running
@@ -90,6 +94,8 @@ final class AutoClickSimulator: ObservableObject {
 
     func stop(triggeredByMouseMovement: Bool = false) {
         self.isAutoClicking = false
+        self.motionTimer?.invalidate()
+        self.motionTimer = nil
         self.movementTimer?.invalidate()
         self.movementTimer = nil
         self.movementOrigin = nil
@@ -254,15 +260,74 @@ final class AutoClickSimulator: ObservableObject {
                 guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { return false }
                 return CGDisplayBounds(CGDirectDisplayID(number.uint32Value)).contains(point)
             }) else { continue }
-            lastWarp = (point, Date())
-            let result = CGWarpMouseCursorPosition(point)
-            if result != .success { lastWarp = nil }
+            animateMovement(to: point, origin: origin, radius: radius)
             return
         }
     }
 
+    private func animateMovement(to destination: CGPoint, origin: CGPoint, radius: CGFloat) {
+        motionTimer?.invalidate()
+        guard let current = CGEvent(source: nil)?.location else { return }
+        // Start within the disk. A quadratic curve whose three control points are in
+        // the disk stays in the disk because a disk is convex.
+        let dx = current.x - origin.x, dy = current.y - origin.y
+        let distance = hypot(dx, dy)
+        let start = distance > radius ? origin : current
+        if distance > radius {
+            lastWarp = (origin, Date())
+            guard CGWarpMouseCursorPosition(origin) == .success else { return }
+        }
+        let vx = destination.x - start.x, vy = destination.y - start.y
+        let bend = CGFloat.random(in: -0.18...0.18)
+        var control = CGPoint(x: (start.x + destination.x) / 2 - vy * bend,
+                              y: (start.y + destination.y) / 2 + vx * bend)
+        let cx = control.x - origin.x, cy = control.y - origin.y
+        let controlDistance = hypot(cx, cy)
+        if controlDistance > radius {
+            control = CGPoint(x: origin.x + cx * radius / controlDistance,
+                              y: origin.y + cy * radius / controlDistance)
+        }
+        let began = Date()
+        let duration = min(0.9, max(0.2, Double(hypot(vx, vy)) / 600))
+        motionTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] timer in
+            guard let self = self, self.isAutoClicking else { timer.invalidate(); return }
+            let t = min(1, max(0, Date().timeIntervalSince(began) / duration))
+            let eased = t * t * (3 - 2 * t)
+            let u = CGFloat(eased), v = 1 - u
+            let point = CGPoint(x: v*v*start.x + 2*v*u*control.x + u*u*destination.x,
+                                y: v*v*start.y + 2*v*u*control.y + u*u*destination.y)
+            // Avoid jumping through a gap between displays.
+            let visible = NSScreen.screens.contains { screen in
+                guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { return false }
+                return CGDisplayBounds(CGDirectDisplayID(number.uint32Value)).contains(point)
+            }
+            guard visible else { timer.invalidate(); return }
+            self.lastWarp = (point, Date())
+            guard CGWarpMouseCursorPosition(point) == .success else { timer.invalidate(); return }
+            if t >= 1 { timer.invalidate(); self.motionTimer = nil }
+        }
+    }
+
+    func updateRadiusPreview(_ radius: Int) {
+        guard !isAutoClicking else { return }
+        if previewOrigin == nil { previewOrigin = CGEvent(source: nil)?.location }
+        guard let origin = previewOrigin else { return }
+        previewWindow?.orderOut(nil)
+        previewWindow = makeBoundaryWindow(origin: origin, radius: CGFloat(max(1, min(1000, radius))))
+    }
+
+    func endRadiusPreview() {
+        previewWindow?.orderOut(nil)
+        previewWindow = nil
+        previewOrigin = nil
+    }
+
     private func showMovementBoundary(origin: CGPoint, radius: CGFloat) {
-        guard let mainScreen = NSScreen.screens.first else { return }
+        movementOverlay = makeBoundaryWindow(origin: origin, radius: radius)
+    }
+
+    private func makeBoundaryWindow(origin: CGPoint, radius: CGFloat) -> NSWindow? {
+        guard let mainScreen = NSScreen.screens.first else { return nil }
         // Quartz uses a top-left origin; AppKit windows use a bottom-left origin.
         let center = CGPoint(x: origin.x, y: mainScreen.frame.maxY - origin.y)
         let frame = CGRect(x: center.x - radius - 3, y: center.y - radius - 3,
@@ -276,7 +341,7 @@ final class AutoClickSimulator: ObservableObject {
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         window.contentView = RadiusBoundaryView(frame: CGRect(origin: .zero, size: frame.size))
         window.orderFrontRegardless()
-        movementOverlay = window
+        return window
     }
 
     private let mouseDownEventMap: [NSEvent.EventType: CGEventType] = [

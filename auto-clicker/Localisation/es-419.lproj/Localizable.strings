@@ -150,3 +150,6 @@
 "fork_radius_points" = "Radio (puntos)";
 "fork_interval_seconds" = "Intervalo (segundos)";
 "fork_permission_recovery" = "Si el acceso ya estaba activado, elimina la entrada anterior de AutoClicker en Privacidad y seguridad → Accesibilidad. Cierra y vuelve a abrir la app y permite el acceso. Una nueva compilación puede requerir autorización.";
+"fork_next_click" = "Próximo clic";
+"fork_floating_countdown" = "Cuenta regresiva flotante";
+"fork_expand" = "Mostrar ventana principal";
