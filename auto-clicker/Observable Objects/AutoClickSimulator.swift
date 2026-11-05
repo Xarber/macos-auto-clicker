@@ -294,8 +294,12 @@ final class AutoClickSimulator: ObservableObject {
             let t = min(1, max(0, Date().timeIntervalSince(began) / duration))
             let eased = t * t * (3 - 2 * t)
             let u = CGFloat(eased), v = 1 - u
-            let point = CGPoint(x: v*v*start.x + 2*v*u*control.x + u*u*destination.x,
-                                y: v*v*start.y + 2*v*u*control.y + u*u*destination.y)
+            let a: CGFloat = v * v
+            let b: CGFloat = 2 * v * u
+            let c: CGFloat = u * u
+            let x = a * start.x + b * control.x + c * destination.x
+            let y = a * start.y + b * control.y + c * destination.y
+            let point = CGPoint(x: x, y: y)
             // Avoid jumping through a gap between displays.
             let visible = NSScreen.screens.contains { screen in
                 guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { return false }
