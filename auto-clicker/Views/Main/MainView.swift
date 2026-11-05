@@ -203,7 +203,7 @@ struct MainView: View {
                             NumberField(text: "", min: 1, max: 1000, number: self.$randomMouseRadius)
                                 .frame(width: 64)
                             Text("fork_points")
-                            Slider(value: Binding(get: { Double(self.randomMouseRadius) }, set: { self.randomMouseRadius = Int($0) }), in: 1...1000, step: 1, onEditingChanged: { editing in
+                            Slider(value: Binding(get: { Double(self.randomMouseRadius) }, set: { self.randomMouseRadius = Int($0) }), in: 1...1000, onEditingChanged: { editing in
                                 if editing { self.autoClickSimulator.updateRadiusPreview(self.randomMouseRadius) }
                                 else { self.autoClickSimulator.endRadiusPreview() }
                             })
@@ -340,7 +340,11 @@ private final class FloatingCountdown: NSObject, NSWindowDelegate {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.delegate = self
         panel.contentView = NSHostingView(rootView: FloatingCountdownView(onExpand: { [weak self] in self?.close() }))
-        panel.center()
+        if let screen = mainWindow?.screen ?? NSScreen.main {
+            let visible = screen.visibleFrame
+            panel.setFrameTopLeftPoint(NSPoint(x: visible.maxX - panel.frame.width - 16,
+                                               y: visible.maxY - 16))
+        }
         self.panel = panel
         panel.orderFrontRegardless()
         mainWindow?.miniaturize(nil)

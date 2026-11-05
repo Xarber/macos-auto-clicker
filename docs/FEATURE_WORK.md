@@ -27,3 +27,5 @@ The redesign retains the existing theme system and macOS 13 minimum; it does not
 Cursor movement uses a short eased quadratic path. Its control points remain in the session circle, and paths abort if they cross a display gap. The radius slider displays a temporary circle centered at the cursor when editing begins; it disappears when slider editing ends. The active session captures its own center at start. Manual pointer movement remains possible.
 
 The main view displays a countdown based on the next scheduled click. Its floating countdown button minimizes the main window and opens a small always-on-top panel; closing or expanding the panel restores the main window. The panel shows Ready once clicking finishes. Real-device testing of movement, previews, multi-display behavior and window lifecycle remains required.
+
+The radius slider has no tick marks and shares its value with the numeric field. Its preview window resizes in place. The floating countdown initially appears at the upper-right of the main window's screen, within the visible desktop area.

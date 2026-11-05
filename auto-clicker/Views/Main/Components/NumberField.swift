@@ -49,7 +49,11 @@ struct NumberField: View {
     var body: some View {
         TextField(self.text, text: self.$rawString)
             .textFieldStyle(RoundedBorderTextFieldStyle())
-            .onReceive(Just(self.rawString), perform: self.numericValidator)
+            .onChange(of: self.rawString, perform: self.numericValidator)
+            .onChange(of: self.number) { newValue in
+                let value = String(newValue)
+                if self.rawString != value { self.rawString = value }
+            }
             .onAppear(perform: {
                 self.rawString = String(self.number)
             })

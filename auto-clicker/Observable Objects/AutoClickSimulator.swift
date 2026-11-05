@@ -316,8 +316,16 @@ final class AutoClickSimulator: ObservableObject {
         guard !isAutoClicking else { return }
         if previewOrigin == nil { previewOrigin = CGEvent(source: nil)?.location }
         guard let origin = previewOrigin else { return }
-        previewWindow?.orderOut(nil)
-        previewWindow = makeBoundaryWindow(origin: origin, radius: CGFloat(max(1, min(1000, radius))))
+        let boundedRadius = CGFloat(max(1, min(1000, radius)))
+        if let window = previewWindow, let screen = NSScreen.screens.first {
+            let center = CGPoint(x: origin.x, y: screen.frame.maxY - origin.y)
+            let frame = CGRect(x: center.x - boundedRadius - 3, y: center.y - boundedRadius - 3,
+                               width: boundedRadius * 2 + 6, height: boundedRadius * 2 + 6)
+            window.setFrame(frame, display: true)
+            window.contentView?.needsDisplay = true
+        } else {
+            previewWindow = makeBoundaryWindow(origin: origin, radius: boundedRadius)
+        }
     }
 
     func endRadiusPreview() {
